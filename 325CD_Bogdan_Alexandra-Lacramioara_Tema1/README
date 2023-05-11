@@ -1,0 +1,85 @@
+_____   ____  _    _     ___            /|
+  |     |___  | \  /|   /___\          / |     Protocoale de Comunicație
+  |     |___  |  \/ |  /     \           |
+
+
+  Student: Bogdan Alexandra-Lăcrămioara
+  Grupa: 325CD
+
+
+
+!!!! Pentru rezolvarea acestei teme am folosit 2 zile de sleep days. !!!!
+
+     - Va rog sa tineti cont de acest fapt pentru nota finala a temei. Va multumesc! - :)
+                                                                                
+
+  Cerintele rezolvate din aceasta tema au fost:
+
+  - Procesul de dirijare
+  - Longest Prefix Match
+  - ICMP 
+  - Protocolul ARP 
+
+> Impresii 
+
+- Punctul de plecare al acestei teme a fost laboratorul 4.
+- Problemele pe care le-am intampinat in rezolvarea acestei teme au fost datorate checkerul-ui, deoarece in primele 3 zile cand m-am apucat de tema nu a mers. :(
+
+> Descrierea solutiei
+
+
+      > Structuri suplimentare: 
+
+        - In cadrul acestei teme am folosit o structura suplimentara, in care stochez datele reprezentative pentru un pachet, pe care ulterior il adaug in coada :
+
+             * typedef struct {
+
+                        int interface;
+                        char payload[MAX_PACKET_LEN];
+                        size_t len;
+
+              } queue_packet;
+
+       
+       > Procesul de dirijare si ICMP:
+
+         - În cadrul procesului de rutare a pachetelor, routerul primește un pachet și începe verificarea acestuia. În primul rând, se verifică dacă pachetul este de tip Ipv4. Dacă da, atunci se continuă verificarea.
+
+         - În cazul în care routerul primește direct un pachet ICMP_ECHO, acesta trebuie să răspundă cu un pachet icmp de tip ICMP_ECHOREPLY.
+
+         - În caz contrar, routerul verifică checksumul pachetului. Dacă acesta este greșit, pachetul este aruncat și nu este procesat mai departe.
+
+         - Următorul pas este verificarea TTL-ului. Dacă valoarea acestuia este 0 sau 1, atunci pachetul este aruncat și este trimis un pachet ICMP de tipul ICMP_TIME_EXCEEDED înapoi la sursa originală.
+
+         - În cazul în care pachetul a trecut de verificarea TTL-ului, se încearcă identificarea celei mai bune intrări din tabela de rutare pentru a determina următorul hop pe care trebuie să-l facă pachetul. Dacă nu este găsită nicio intrare potrivită, pachetul este aruncat și este trimis un pachet ICMP de tipul ICMP_DEST_UNREACH înapoi la sursa originală.
+
+         - În continuare, routerul încearcă să găsească o intrare potrivită în tabela ARP pentru adresa IP destinatarului. Dacă această informație nu este disponibilă, se va folosi protocolul ARP pentru a determina adresa MAC corespunzătoare adresei IP a destinatarului.
+
+         - După găsirea adresei MAC a destinatarului, routerul decrementează TTL-ul pachetului și recalculează checksum-ul. În final, pachetul este trimis către următorul hop din rețea în funcție de adresa MAC a destinatarului.
+
+      > Protocolul ARP 
+
+        -  Acest protocol insumeaza tratarea urmatoarelor cazuri:
+
+             * Trimiterea unui ARP request:
+
+               - Procesul de trimitere a unui ARP request incepe in momentul in care adresa MAC a urmatorului hop nu se afla in cache-ul ARP al router-ului. Pachetul este pus in coada si se trimite un ARP request, cu adresa MAC destinatie setata la broadcast (FF.FF.FF.FF.FF.FF) si adresa MAC sursa setata la adresa interfetei de pe care pachetul trebuie sa ajunga la urmatorul hop. Campul ether_type din header-ul Ethernet este setat la htons(0x806) iar campurile din header-ul ARP sunt completate cu formatul adreselor hardware si IP, lungimea acestora, si campul op este setat la 1, pentru a indica faptul ca este un ARP request. In header-ul ARP se pun adresele MAC si IP sursa si destinatie, respectiv adresa MAC sursa este cea a interfetei, iar adresa MAC destinatie este broadcast, iar adresele IP sursa si destinatie sunt, respectiv, adresa IP a interfetei si adresa IP a urmatorului hop.
+
+
+             * Primirea unui ARP reply
+
+                - In cazul in care un ARP reply este primit, se creeaza un arp_entry care contine adresele MAC si IP ale pachetului si se pune in coada. Cat timp sunt pachete in coada a caror adresa a urmatorului hop apare in cache-ul ARP, se trimite unul cate unul similar cum am descris in sectiunea "Procesul de dirijare".
+
+            *  Primirea unui ARP request 
+                 - Daca un router primeste un ARP request, acesta verifica daca adresa IP destinatie a pachetului este chiar adresa sa. In caz afirmativ, router-ul va schimba campul "op" din header-ul ARP in 2, va inversa adresele IP si MAC din header-ul ARP si Ethernet si va trimite pachetul inapoi catre sursa. Astfel, sursa va primi un ARP reply cu adresa MAC a router-ului, pe care o va putea folosi pentru a trimite pachete de date catre destinatie.
+
+    
+      > Longest Prefix Match
+
+      - Pentru a eficientiza algoritmul de căutare a adresei IP în tabela de rutare, am decis să utilizez metoda de căutare binară. Această metodă are o complexitate mai mică decât metoda de căutare liniară, deoarece necesită un număr mai mic de operații. Astfel, avem o complexitate de O(log n), mai mică decât complexitatea O(n) menționată în cerință.
+
+      - De asemenea, pentru a optimiza și mai mult căutarea, am ales să sortez tabela de rutare cu ajutorul funcției qsort. Prin aceasta, obținem o ordonare a elementelor în tabelă, ceea ce face căutarea binară să fie și mai rapidă și eficientă.
+
+        
+
+
